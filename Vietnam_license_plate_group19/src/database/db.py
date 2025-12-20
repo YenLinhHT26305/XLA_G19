@@ -5,10 +5,10 @@ import pyodbc
 # Database configuration
 # =========================
 DB_DRIVER = "{ODBC Driver 17 for SQL Server}"
-DB_SERVER = "LAPTOP-PSVNV44T\\MSSQLSERVER1"   # hoặc: LAPTOP-PSVNV44T,1433
+DB_SERVER = r"DESKTOP-8HLP964\SQLEXPRESS" 
 DB_NAME   = "ANPR_DB"
 DB_USER   = "sa"
-DB_PASS   = "linhhtyl0"
+DB_PASS   = "123456"
 
 # =========================
 # Create connection
@@ -29,49 +29,43 @@ def get_connection():
     return pyodbc.connect(conn_str)
 
 
+
 # =========================
 # Database operations
 # =========================
-def save_plate(plate, confidence, image_path=None):
-    """
-    Lưu kết quả OCR biển số vào database
-    """
+def save_plate(plate, confidence, decision, image_path=None):
     conn = None
     cursor = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
-
-        cursor.execute(
-            """
-            INSERT INTO LicensePlateLog (plate, confidence, image_path)
-            VALUES (?, ?, ?)
-            """,
-            (plate, confidence, image_path)
-        )
+        
+        # Câu lệnh này phải khớp 100% với bảng LicensePlateLog trong SQL
+        sql = """
+            INSERT INTO LicensePlateLog (plate, confidence, decision, image_path, time_detected)
+            VALUES (?, ?, ?, ?, GETDATE())
+        """
+        cursor.execute(sql, (plate, confidence, decision, image_path))
         conn.commit()
+        # print(f"💾 Đã lưu DB: {plate} - {decision}")
 
-    except pyodbc.Error as e:
-        print("❌ Database error:", e)
+    except Exception as e:
+        print("❌ Lỗi Database:", e)
 
     finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
-
+        if cursor: cursor.close()
+        if conn: conn.close()
 
 def fetch_all_logs():
-    """
-    Lấy toàn bộ lịch sử nhận dạng
-    """
+    # Lấy 50 dòng mới nhất để tránh lag
     conn = get_connection()
     cursor = conn.cursor()
-
-    cursor.execute("SELECT * FROM LicensePlateLog ORDER BY time_detected DESC")
+    cursor.execute("""
+        SELECT TOP 50 id, plate, confidence, decision, image_path, time_detected
+        FROM LicensePlateLog
+        ORDER BY time_detected DESC
+    """)
     rows = cursor.fetchall()
-
-    cursor.close()
     conn.close()
     return rows
 

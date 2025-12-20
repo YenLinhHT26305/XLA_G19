@@ -109,3 +109,35 @@ class PlateOCR:
                 result += Counter(chars).most_common(1)[0][0]
 
         return result
+
+# Thêm logic ép buộc: 2 ký tự đầu là số, ký tự thứ 3 là chữ.
+# Tìm hàm _correct_plate_format và sửa thành:
+    def _correct_plate_format(self, text: str) -> str:
+        text = text.upper()
+        text = re.sub(r"[^A-Z0-9]", "", text) # Xóa hết dấu chấm, gạch
+
+        if len(text) < 7 or len(text) > 10:
+            return ""
+
+        # MAPPING SỬA LỖI (Quan trọng)
+        # 0 vs O, 1 vs I, 8 vs B, ...
+        map_to_letter = {"0": "O", "1": "I", "5": "S", "8": "B", "6": "G", "2": "Z", "4": "A"}
+        map_to_digit  = {"O": "0", "I": "1", "Z": "2", "S": "5", "B": "8", "G": "6", "T": "7", "A": "4"}
+
+        chars = list(text)
+
+        # QUY LUẬT BIỂN VN: 2 ký tự đầu luôn là SỐ (59, 61...)
+        for i in [0, 1]:
+            if i < len(chars) and chars[i] in map_to_digit:
+                chars[i] = map_to_digit[chars[i]]
+
+        # Ký tự thứ 3 luôn là CHỮ (A, B, C...)
+        if 2 < len(chars) and chars[2] in map_to_letter:
+            chars[2] = map_to_letter[chars[2]]
+        
+        # Các ký tự sau thường là số (trừ xe máy điện), sửa sơ bộ
+        for i in range(3, len(chars)):
+             if chars[i] in map_to_digit:
+                 chars[i] = map_to_digit[chars[i]]
+
+        return "".join(chars)

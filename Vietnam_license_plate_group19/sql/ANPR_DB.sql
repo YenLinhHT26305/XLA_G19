@@ -1,82 +1,90 @@
-IF NOT EXISTS (
-    SELECT name FROM sys.databases WHERE name = 'ANPR_DB'
-)
+USE master;
+GO
+
+-- 1. XÓA DB CŨ ĐỂ LÀM SẠCH (Reset toàn bộ)
+IF EXISTS (SELECT name FROM sys.databases WHERE name = 'ANPR_DB')
 BEGIN
-    CREATE DATABASE ANPR_DB;
+    ALTER DATABASE ANPR_DB SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE ANPR_DB;
 END
 GO
 
+-- 2. TẠO DB MỚI
+CREATE DATABASE ANPR_DB;
+GO
+
 USE ANPR_DB;
 GO
 
--- ==============================
--- Table: License plate detection log
--- ==============================
+-- ====================================================
+-- BẢNG 1: RegisteredVehicles (DANH SÁCH XE ĐƯỢC PHÉP - WHITELIST)
+-- Tác dụng: Chứa thông tin xe đã đăng ký vé tháng/cư dân.
+-- ====================================================
+CREATE TABLE RegisteredVehicles (
+    plate NVARCHAR(20) PRIMARY KEY, -- Biển số (Viết liền, không dấu)
+    owner_name NVARCHAR(100),       -- Tên chủ xe
+    vehicle_type NVARCHAR(50),      -- Loại xe (Ô tô/Xe máy)
+    allowed BIT DEFAULT 1,          -- 1: Cho phép mở cổng, 0: Cấm (Blacklist)
+    created_at DATETIME DEFAULT GETDATE()
+);
+
+-- ====================================================
+-- BẢNG 2: LicensePlateLog (NHẬT KÝ RA VÀO)
+-- Tác dụng: Lưu lại lịch sử, bằng chứng, thời gian xe qua cổng.
+-- ====================================================
 CREATE TABLE LicensePlateLog (
     id INT IDENTITY(1,1) PRIMARY KEY,
     plate NVARCHAR(20) NOT NULL,
-    confidence FLOAT CHECK (confidence BETWEEN 0 AND 1),
-    image_path NVARCHAR(255),
+    confidence FLOAT,            -- Độ tin cậy của AI (0.0 - 1.0)
+    decision NVARCHAR(50),       -- Quyết định: ALLOW / DENY / MANUAL
+    image_path NVARCHAR(MAX),    -- Đường dẫn file ảnh đã lưu trên máy tính
     time_detected DATETIME DEFAULT GETDATE()
 );
 
--- ==============================
--- Optional: Registered vehicles
--- ==============================
-CREATE TABLE RegisteredVehicles (
-    plate NVARCHAR(20) PRIMARY KEY,
-    owner_name NVARCHAR(100),
-    vehicle_type NVARCHAR(50),
-    allowed BIT DEFAULT 1
-);
+-- Tạo Index để tìm kiếm nhanh hơn khi dữ liệu lớn
+CREATE INDEX IDX_Log_Plate ON LicensePlateLog(plate);
+CREATE INDEX IDX_Log_Time ON LicensePlateLog(time_detected);
 
-
-USE ANPR_DB;
 GO
 
--- ==============================
--- Sample registered vehicles
--- ==============================
+-- ====================================================
+-- NHẬP DỮ LIỆU MẪU (DANH SÁCH BẠN YÊU CẦU)
+-- Lưu ý: Dữ liệu đã được xóa dấu '-' và '.'
+-- ====================================================
+
 INSERT INTO RegisteredVehicles (plate, owner_name, vehicle_type, allowed)
 VALUES
-('48A-028.66', N'Nguyễn Văn A', N'Xe máy', 1),
-('51G-517.17', N'Trần Thị B', N'Ô tô', 1),
-('59X-123.45', N'Lê Văn C', N'Xe máy', 0);
+-- Xe máy
+('90B245230', N'Chủ xe 61T3',  N'Xe máy', 1),
+('59V179379', N'Chủ xe 59V1',  N'Xe máy', 1),
+('49E164481',  N'Chủ xe 60A5',  N'Xe máy', 1),
+('86B137449', N'Chủ xe 49E1',  N'Xe máy', 1),
+('47K117349',   N'Chủ xe Điện',  N'Xe máy điện', 1),
+('66P189575', N'Chủ xe 86B1',  N'Xe máy', 1),
+('63B999999', N'Chủ xe 84B1',  N'Xe máy', 1),
+('29B199999', N'Chủ xe 29B1',  N'Xe máy', 1),
 
--- ==============================
--- Sample OCR logs
--- ==============================
-INSERT INTO LicensePlateLog (plate, confidence, image_path)
-VALUES
-('48A-028.66', 0.92, 'results/plate_001.jpg'),
-('51G-517.17', 0.88, 'results/plate_002.jpg');
+-- Ô tô
+('61A60573',  N'Công Ty LTTL',    N'Ô tô', 1),
+('95A01379',  N'Nguyễn Văn B', N'Ô tô', 1),
+('60A55655',  N'Lê Văn D',     N'Ô tô', 1),
+('51H04073',  N'Phạm Văn E',   N'Ô tô', 1),
+('51G68882',  N'Xe VIP F',     N'Ô tô', 1),
+('50F70874',  N'Võ Văn G',     N'Ô tô', 1),
+('30E92115',  N'Đặng Văn H',   N'Ô tô', 1),
+('51A13883',  N'Huỳnh Yến L',   N'Ô tô', 1),
+('51H59565',  N'Nguyễn Hương G',   N'Ô tô', 1),
+('20A09999',  N'Đặng Văn H',   N'Ô tô', 1);
 
+-- Xe Test Blacklist (Cấm)
+INSERT INTO RegisteredVehicles (plate, owner_name, vehicle_type, allowed)
+VALUES ('51F88686', N'Xe Vi Phạm', N'Ô tô', 0),
+		('84B136217', N'Xe Vi Phạm',  N'Xe máy', 1);
 
-
-USE ANPR_DB;
 GO
 
--- 1. Xem toàn bộ log OCR
-SELECT * FROM LicensePlateLog
-ORDER BY time_detected DESC;
-
--- 2. Kiểm tra xe có được phép ra vào không
-SELECT 
-    l.plate,
-    l.time_detected,
-    r.owner_name,
-    r.allowed
-FROM LicensePlateLog l
-LEFT JOIN RegisteredVehicles r
-    ON l.plate = r.plate;
-
--- 3. Xe không được phép
-SELECT *
-FROM RegisteredVehicles
-WHERE allowed = 0;
-
--- 4. Thống kê số lần xuất hiện theo biển số
-SELECT plate, COUNT(*) AS detect_count
-FROM LicensePlateLog
-GROUP BY plate;
-
+-- ====================================================
+-- TRUY VẤN KIỂM TRA
+-- ====================================================
+PRINT N'Đã khởi tạo Database thành công!';
+SELECT * FROM RegisteredVehicles;
