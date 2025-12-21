@@ -3,8 +3,10 @@ import time
 
 class BarrierController:
     def __init__(self, port='COM6', baud_rate=9600):
-        self.port = port            # Lưu lại tên cổng
-        self.baud_rate = baud_rate  # Lưu lại tốc độ
+        # Tên cổng
+        self.port = port          
+        # Tốc độ  
+        self.baud_rate = baud_rate  
         self.arduino = None
         self.is_connected = False
         
@@ -17,17 +19,17 @@ class BarrierController:
         self.last_vehicle_time = 0
 
     def connect_arduino(self):
-        """Hàm riêng để thực hiện kết nối"""
+        # Hàm riêng để thực hiện kết nối
         if self.is_connected:
-            return # Đã kết nối rồi thì thôi
+            return 
 
         try:
             self.arduino = serial.Serial(self.port, self.baud_rate, timeout=1)
             time.sleep(2) # Đợi Arduino khởi động lại
-            print(f"✅ [PHẦN CỨNG] Đã kết nối lại tại {self.port}")
+            print(f"✅ Phần cứng đã được kết nối lại tại {self.port}")
             self.is_connected = True
         except Exception as e:
-            print(f"⚠️ [PHẦN CỨNG] Lỗi kết nối: {e}")
+            print(f"⚠️ Gặp lỗi kết nối với phần cứng: {e}")
             self.is_connected = False
 
     def send_cmd(self, cmd):
@@ -50,19 +52,20 @@ class BarrierController:
                 self.send_cmd(b'1')
                 self.is_open = True
                 self.last_open_time = now
-                print(">>> 🟢 MỞ CỔNG")
+                print("=>>> 🟢 MỞ CỔNG")
         else:
             if self.is_open and (now - self.last_vehicle_time > self.safety_delay):
                 self.send_cmd(b'0')
                 self.is_open = False
-                print(">>> 🔴 ĐÓNG CỔNG")
+                print("=>>>🔴 ĐÓNG CỔNG")
 
     def close_connection(self):
+        # Đóng cổng trước khi ngắt kết nối
         if self.is_open: 
-            self.send_cmd(b'0') # Đóng cổng trước khi ngắt
+            self.send_cmd(b'0') 
         
         if self.arduino and self.arduino.is_open:
             self.arduino.close()
-            print("🛑 [PHẦN CỨNG] Đã ngắt kết nối Arduino")
+            print("🛑 Phần cứng đã ngắt kết nối Arduino")
         
         self.is_connected = False

@@ -1,9 +1,8 @@
-# File: src/main.py
 import sys
 import os
 from PySide6.QtWidgets import QApplication
 
-# Thêm thư mục hiện tại vào đường dẫn tìm kiếm của Python
+# Thư mục hiện tại vào đường dẫn
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 

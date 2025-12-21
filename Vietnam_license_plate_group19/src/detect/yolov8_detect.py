@@ -9,11 +9,10 @@ class YoloPlateDetector:
         self.conf_thres = conf_thres
 
     def detect_and_crop(self, img):
-        """
-        Phát hiện biển số và crop + rectify
-        Trả về:
-            plate_crop, bbox(x1,y1,x2,y2), conf
-        """
+        # Phát hiện biển số
+        # Lấy bounding box tốt nhất
+        # Crop ảnh biển số
+        # Trả về kết quả cho OCR xử lý tiếp
         h, w = img.shape[:2]
 
         results = self.model(img, conf=self.conf_thres, device=self.device, verbose=False)
@@ -22,7 +21,6 @@ class YoloPlateDetector:
         if len(r.boxes) == 0:
             return None, None, 0.0
 
-        # Lấy bbox có confidence cao nhất
         best_box = None
         best_conf = 0.0
         for box in r.boxes:
@@ -32,10 +30,7 @@ class YoloPlateDetector:
                 best_box = box
 
         x1, y1, x2, y2 = map(int, best_box.xyxy.cpu().numpy()[0])
-
-        # Clamp an toàn
         x1 = max(0, x1); y1 = max(0, y1)
         x2 = min(w, x2); y2 = min(h, y2)
-
         plate_crop = img[y1:y2, x1:x2].copy()
         return plate_crop, (x1, y1, x2, y2), best_conf

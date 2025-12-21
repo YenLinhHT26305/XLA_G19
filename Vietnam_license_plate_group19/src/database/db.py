@@ -1,22 +1,15 @@
 # src/database/db.py
 import pyodbc
 
-# =========================
-# Database configuration
-# =========================
+# Cấu hình CSDL
 DB_DRIVER = "{ODBC Driver 17 for SQL Server}"
 DB_SERVER = r"DESKTOP-8HLP964\SQLEXPRESS" 
 DB_NAME   = "ANPR_DB"
 DB_USER   = "sa"
 DB_PASS   = "123456"
 
-# =========================
-# Create connection
-# =========================
+# Tạo kết nối với CSDL
 def get_connection():
-    """
-    Tạo và trả về kết nối tới SQL Server
-    """
     conn_str = (
         f"DRIVER={DB_DRIVER};"
         f"SERVER={DB_SERVER};"
@@ -30,9 +23,7 @@ def get_connection():
 
 
 
-# =========================
-# Database operations
-# =========================
+# Các thao tác với CSDL
 def save_plate(plate, confidence, decision, image_path=None):
     conn = None
     cursor = None
@@ -47,17 +38,17 @@ def save_plate(plate, confidence, decision, image_path=None):
         """
         cursor.execute(sql, (plate, confidence, decision, image_path))
         conn.commit()
-        # print(f"💾 Đã lưu DB: {plate} - {decision}")
+        # print(f"Đã lưu DB: {plate} - {decision}")
 
     except Exception as e:
-        print("❌ Lỗi Database:", e)
+        print("Lỗi Database:", e)
 
     finally:
         if cursor: cursor.close()
         if conn: conn.close()
 
 def fetch_all_logs():
-    # Lấy 50 dòng mới nhất để tránh lag
+    # Lấy 50 dòng mới nhất để tránh lag và đưa lên lịch sử trên giao diện
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""
@@ -69,10 +60,7 @@ def fetch_all_logs():
     conn.close()
     return rows
 
-
-# =========================
-# Test connection
-# =========================
+# Hàm kiểm tra kết nối CSDL
 if __name__ == "__main__":
     try:
         conn = get_connection()
