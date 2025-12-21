@@ -67,11 +67,11 @@ if __name__ == "__main__":
         cursor = conn.cursor()
 
         cursor.execute("SELECT GETDATE()")
-        print("✅ Connected to SQL Server!")
+        print("Connected to SQL Server!")
         print("Server time:", cursor.fetchone()[0])
 
         cursor.close()
         conn.close()
 
     except pyodbc.Error as e:
-        print("❌ Connection failed:", e)
+        print("Connection failed:", e)

@@ -26,7 +26,7 @@ class BarrierController:
         try:
             self.arduino = serial.Serial(self.port, self.baud_rate, timeout=1)
             time.sleep(2) # Đợi Arduino khởi động lại
-            print(f"✅ Phần cứng đã được kết nối lại tại {self.port}")
+            print(f"Phần cứng đã được kết nối lại tại {self.port}")
             self.is_connected = True
         except Exception as e:
             print(f"⚠️ Gặp lỗi kết nối với phần cứng: {e}")
@@ -37,7 +37,7 @@ class BarrierController:
             try: 
                 self.arduino.write(cmd)
             except Exception:
-                print("⚠️ Mất kết nối Arduino!")
+                print("Mất kết nối Arduino!")
                 self.is_connected = False
 
     def process_logic(self, is_allowed: bool):
@@ -57,7 +57,7 @@ class BarrierController:
             if self.is_open and (now - self.last_vehicle_time > self.safety_delay):
                 self.send_cmd(b'0')
                 self.is_open = False
-                print("=>>>🔴 ĐÓNG CỔNG")
+                print("=>>> 🔴 ĐÓNG CỔNG")
 
     def close_connection(self):
         # Đóng cổng trước khi ngắt kết nối
