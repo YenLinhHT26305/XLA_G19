@@ -3,6 +3,7 @@
 Ứng dụng xử lý ảnh số trong nhận dạng và phân loại biển số xe tại Việt Nam, kết hợp mô hình học sâu **YOLOv8** để phát hiện biển số với các kỹ thuật xử lý ảnh cổ điển (HSV, Gaussian filter, Otsu, CLAHE) để tiền xử lý, và **EasyOCR** để nhận dạng ký tự. Hệ thống được demo trên mô hình phần cứng barrier tự động (ESP32-CAM + Arduino).
 
 > Bài tiểu luận môn **Xử lý ảnh số** — Nhóm 19, HCMUTE
+> 📄 **Báo cáo tiểu luận đầy đủ:** [Báo_cáo_tiểu_luận_XLA_G19.docx](https://docs.google.com/document/d/1t_qjr3eHH6rG60ZKfsXXshH9LL1TTMYn/edit?usp=sharing&ouid=115926746488026434084&rtpof=true&sd=true)
 
 ## 📌 Giới thiệu
 
